@@ -1,65 +1,50 @@
-import React, { useRef, useState } from 'react';
+import React, { useState, useRef } from 'react';
 
-const CameraAccess: React.FC = () => {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [cameraStatus, setCameraStatus] = useState('Cámara esperando acción...');
-  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
+function CameraAccess() {
+  const [cameraOn, setCameraOn] = useState(false);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
-  // Iniciar cámara
-  const startCamera = async () => {
-    try {
-      console.log('Solicitando acceso a la cámara...');
-      const mediaStream = await navigator.mediaDevices.getUserMedia({ video: true });
-      console.log('Camera MediaStream recibido:', mediaStream);
-
-      if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream;
+  const handleCameraToggle = async () => {
+    if (!cameraOn) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+        streamRef.current = stream;
+        setCameraOn(true);
+        console.log('📷 Cámara activada');
+      } catch (error) {
+        console.error('🚫 Error al acceder a la cámara:', error);
       }
-
-      setCameraStream(mediaStream);
-      setCameraStatus('Cámara activada');
-    } catch (error) {
-      console.error('Error al acceder a la cámara:', error);
-      setCameraStatus('Error al acceder a la cámara');
-    }
-  };
-
-  // Detener cámara
-  const stopCamera = () => {
-    if (cameraStream) {
-      console.log('Deteniendo cámara...');
-      cameraStream.getTracks().forEach((track) => track.stop());
-      setCameraStream(null);
-      setCameraStatus('Cámara desactivada');
+    } else {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current = null;
+        console.log('🔌 Cámara desactivada');
+      }
+      if (videoRef.current) {
+        videoRef.current.srcObject = null;
+      }
+      setCameraOn(false);
     }
   };
 
   return (
-    <div className="mb-8">
-      <h2 className="text-xl font-semibold mb-2">Cámara</h2>
+    <div>
+      <h2>Acceso a la Cámara</h2>
       <video
         ref={videoRef}
         autoPlay
-        muted
-        className="border-2 border-gray-500 w-full max-w-md mb-2"
-      ></video>
-      <p className="text-blue-500">{cameraStatus}</p>
-      <div className="flex gap-4 mt-2">
-        <button
-          onClick={startCamera}
-          className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-700"
-        >
-          Activar Cámara
-        </button>
-        <button
-          onClick={stopCamera}
-          className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-700"
-        >
-          Desactivar Cámara
-        </button>
-      </div>
+        style={{ width: '300px', height: 'auto', border: '2px solid #ccc', marginBottom: '1rem' }}
+      />
+      <br />
+      <button onClick={handleCameraToggle}>
+        {cameraOn ? 'Desactivar Cámara' : 'Activar Cámara'}
+      </button>
     </div>
   );
-};
+}
 
 export default CameraAccess;
